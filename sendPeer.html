@@ -1,0 +1,84 @@
+<!doctype html>
+<html>
+<head>
+    <title>Simple File Sending Example</title>
+    <style>
+        body {
+            font-family: sans-serif;
+        }
+    </style>
+</head>
+<body>
+<h2>Start seeding</h2>
+<p>
+    choose a file (or files) to begin sharing. Or choose a file:
+    <input type="file" name="upload" multiple>
+</p>
+<div id="log"></div>
+
+<!-- Include the latest version of WebTorrent -->
+<script src="https://cdn.jsdelivr.net/webtorrent/latest/webtorrent.min.js"></script>
+<script src="/bundle.js"></script>
+
+<script>
+    var uploadElement = require('upload-element');
+    var client = new WebTorrent();
+
+    // Print warnings and errors to the console
+    client.on('warning', function (err) {
+        console.log('WARNING: ' + err.message)
+    });
+    client.on('error', function (err) {
+        console.error('ERROR: ' + err.message)
+    });
+
+    var upload = document.querySelector('input[name=upload]');
+    uploadElement(upload, function (err, files) {
+        if (err) return util.error(err);
+        files = files.map(function (file) { return file.file });
+        onFiles(files);
+    });
+
+    function onFiles (files) {
+        debug('got files:');
+        files.forEach(function (file) {
+            debug(' - %s (%s bytes)', file.name, file.size)
+        });
+
+        // .torrent file = start downloading the torrent
+        files.filter(isTorrentFile).forEach(downloadTorrentFile);
+
+        // everything else = seed these files
+        seed(files.filter(isNotTorrentFile))
+    }
+
+    function seed (files) {
+        if (files.length === 0) return;
+        util.log('Seeding ' + files.length + ' files');
+
+        // Seed from WebTorrent
+        client.seed(files, onTorrent);
+    }
+
+    function onTorrent (torrent) {
+        alert('torrent');
+        log(
+                'Torrent info hash: ' + torrent.infoHash + ' ' +
+                '<a href="' + torrent.magnetURI + '" target="_blank">[Magnet URI]</a> ' +
+                '<a href="' + torrent.torrentFileURL + '" target="_blank" download="' + torrentFileName + '">[Download .torrent]</a>'
+        );
+
+        torrent.files.forEach(function (file) {
+            file.appendTo('.log')
+        })
+    }
+
+    function log (str) {
+        var p = document.createElement('p');
+        p.innerHTML = str;
+        document.querySelector('.log').appendChild(p);
+    }
+
+</script>
+</body>
+</html>

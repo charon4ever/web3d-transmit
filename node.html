@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+</head>
+<body>
+<div id="container"></div>
+<div id="info">
+    <span id="rcanvas" class="button inactive"></span>
+    <span id="rwebgl" class="button"></span>
+    <br/>
+</div>
+<script src="/client.js"></script>
+<script src="/file_new.js"></script>
+<script src="/matrix4.js"></script>
+<script type="text/javascript" src="/build/jquery-1.4.min.js"></script>
+<script src="/build/three.js"></script>
+<script src="/js/loaders/DDSLoader.js"></script>
+<script src="/js/loaders/ColladaLoader.js"></script>
+<script src="/js/Detector.js"></script>
+<script src="/js/libs/stats.min.js"></script>
+<script src="/js/controls/thirdPersonControls.js"></script>
+<script src="/js/aoi.js"></script>
+<script src="/scene-scale.js"></script>
+<script src="/sceneData.js"></script>
+<script type="text/javascript">
+    var SCREEN_WIDTH = window.innerWidth;
+    var SCREEN_HEIGHT = window.innerHeight;
+    var FLOOR = 0;
+    var container, stats;
+    var controls;
+    var camera, scene;
+    var canvasRenderer, webglRenderer;
+    var clock = new THREE.Clock();
+    var mesh, zmesh, geometry;
+    var mouseX = 0, mouseY = 0;
+    var windowHalfX = window.innerWidth / 2;
+    var windowHalfY = window.innerHeight / 2;
+    var render_canvas = 1, render_gl = 1;
+    var has_gl = 0;
+    var bcanvas = document.getElementById( "rcanvas" );
+    var bwebgl = document.getElementById( "rwebgl" );
+    var originalMeshData={}; //存储原始模型信息
+    var cellMeshData={}; //存储每一个网格内各模型信息
+    var cellLoadFlag={};//存储每一个网格内模型加载flag
+    var renderOKFlag=false;
+    var aoi=new AOI(3000);
+    var aoiRange=3000;
+    var colorLib=[];
+    var avatarModel;
+    var theta;
+    var skyBox;
+    var maxXRol=0,maxYRol=0,minXRol=1000,minYRol=1000;
+    var loadWorker=[];
+    var calWorker=[];
+    var workerNum=24;
+    var loadWorkerNum=6;
+    var sceneMesh=[];
+    var roomMateNum; //超级节点管辖的peer数量
+    var sceneScale= new SceneScale({
+        maxX:1.1e3,
+        minX:-1.1e3,
+        maxY:1.1e3,
+        minY:-1.1e3,
+        stepX:22,
+        stepY:22
+    });
+
+    /********************************************************/
+    container = document.getElementById( 'container' );
+
+    webglRenderer = new THREE.WebGLRenderer();
+    webglRenderer.setClearColor( 0xffffff );
+    webglRenderer.setSize( SCREEN_WIDTH, SCREEN_HEIGHT );
+    webglRenderer.domElement.style.position = "relative";
+    container.appendChild( webglRenderer.domElement );
+    has_gl = 1;
+
+    canvasRenderer = new THREE.CanvasRenderer();
+    canvasRenderer.setClearColor( 0xffffff );
+    canvasRenderer.setSize( SCREEN_WIDTH, SCREEN_HEIGHT );
+    container.appendChild( canvasRenderer.domElement );
+    /********************************************************/
+    var cNum=0;
+    var glRtc=webglRTC();
+    glRtc.fileAddressor.initFileSystem(200,function(){
+        glRtc.initSocket("ws:" + window.location.href.substring(window.location.protocol.length).split('#')[0], window.location.hash.slice(1));
+    });
+    glRtc.on("_answerMateNum",function(data){
+        roomMateNum=data.num;
+        glRtc.join();
+        init();
+        animate();
+    });
+</script>
+</body>
+</html>
